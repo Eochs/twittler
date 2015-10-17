@@ -1,27 +1,257 @@
 <!DOCTYPE html>
 <html>
   <head>
+
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="" />
+    <meta name="author" content="" />
+    <!--[if IE]>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<![endif]-->
+
     <script src="jquery.js"></script>
+    <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>  
     <script src="data_generator.js"></script>
+
+
+
+
+    <title>Twittler</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" rel="stylesheet">
+
   </head>
+
   <body>
+
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12 text-center">
+                <h2>Twittler</h2>
+                <h6>Created by Spencer Ochs</h6>
+                <br />
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-4 col-lg-offset-4 col-md-4 col-md-offset-4 col-sm-4 col-sm-offset-4">
+                <!-- TWEET WRAPPER START -->
+                <div class="twt-wrapper">
+                    <div class="panel panel-info">
+                        <div class="panel-heading">
+                            Twittler Feed
+                        </div>
+                        <div class="panel-body">
+                            
+                            <a href="#" class="btn home btn-primary btn-md pull-left" role='button'>Home</a>
+                            <a href="#" class="btn cancel btn-danger btn-sm pull-left" role='button'>Cancel</a>
+                            <a href="#" class="btn write btn-primary btn-md pull-left" role='button'>Write Twit</a>
+                            <a href="#" class="btn new_twits btn-primary btn-md pull-right" role='button'>Display new Twits</a>
+                            <a href="#" class="btn commit btn-success btn-sm pull-right" role='button'>Commit</a>
+
+                            <div class="clearfix"></div>
+                            <hr />
+                            <ul class="media-list">
+
+
+                              <li class="media">
+                                <div class="media-body">
+                                </div>
+                                <span class="text-muted pull-right">
+                                  <small class="text-muted">12:30pm</small>
+                                </span>
+                                <strong class="text-success">@Spencer</strong>
+                                <p>Message...</p>
+                              </li>
+
+
+                            </ul>
+
+                        </div>  
+
+                    </div>          
+                </div>
+                <!-- TWEET WRAPPER END -->              
+            </div>             
+        </div>                            
+
+    </div> <!-- CONTAINER END -->
+
     <script>
 
-      $(document).ready(function(){
-        var $body = $('body');
-        $body.html('');
+      var visitor = 'you'; // global visitor property
 
-        var index = streams.home.length - 1;
-        while(index >= 0){
-          var tweet = streams.home[index];
-          var $tweet = $('<div></div>');
-          $tweet.text('@' + tweet.user + ': ' + tweet.message);
-          $tweet.appendTo($body);
-          index -= 1;
+
+      function formatDate(date) {
+        var monthNames = [
+          "January", "February", "March",
+          "April", "May", "June", "July",
+          "August", "September", "October",
+          "November", "December"
+        ];
+
+        var minute = date.getMinutes();
+        if (minute < 10) {
+          minute = '0' + String(minute);
+        } else {
+          minute = String(minute);
         }
+        var hour = date.getHours();
+        if (hour < 12) {
+          minute += 'am';
+        } else {
+          if (hour > 12) {
+            hour -= 12;
+          }
+          minute += 'pm';
+        }
+        var day = date.getDate();
+        var monthIndex = date.getMonth();
+        var year = date.getFullYear();
+
+        return hour + ':' + minute +  ' ' + monthNames[monthIndex] + ' ' + day + ', ' + year;
+      }
+
+
+      function buildTwit(tweet) {
+        var $tweet = $('<li class="media"></li>');
+
+        $('<div class="media-body"></div>').appendTo($tweet);
+
+        $('<span>',{
+            'class' : 'text-muted pull-right',
+            'html': $('<small>',{
+                        'class' : 'text-muted'
+                      }).text(formatDate(tweet.created_at))
+          }).appendTo($tweet);
+
+        $('<strong class="text-success name">@'+ tweet.user +'</strong>').appendTo($tweet);
+
+        $('<p></p>').text(tweet.message).appendTo($tweet); 
+        return $tweet;
+      }
+
+
+      $(document).ready(function(){
+
+        var $twit_list = $('.media-list');
+        var index = 0;
+        var curr_num_twits = streams.home.length;
+        var prev_num_twits = curr_num_twits;
+
+        // click handlers
+
+        $('.new_twits').on('click', function(event){
+          var num_new_twits = streams.home.length - prev_num_twits; // index == num previous twits displayed
+
+          if (num_new_twits === 0) 
+            console.log(streams.home.length, prev_num_twits);
+
+          for(var i = 0; i < num_new_twits; i++) {
+            var twit = streams.home[prev_num_twits + i];
+            var $twit = buildTwit(twit);
+            $twit.prependTo($twit_list);
+          }
+
+          prev_num_twits += num_new_twits;
+        });
+
+
+        $('ul').on('click', '.name', function(event){
+          $('.home').show();
+          $('.write').hide()
+          $('.new_twits').hide();          
+          //erase all other twits and re-append only twits from .name
+          var name = String($(this).text().slice(1));
+          $('.panel-heading').text('Twittler feed for ' + name);
+
+          $('.media-list').html(''); 
+          $twit_list = $('.media-list');
+
+          var index = 0;
+          var twits = streams.users[name];
+
+          while(index < twits.length){ // goes through twits in order prepending to the ul
+            var twit = twits[index];
+            var $twit = buildTwit(twit);
+            $twit.prependTo($twit_list);
+            index += 1;
+          }
+
+        });
+
+
+        $('.home').on('click', function(event){
+          $('.home').hide();
+          $('.write').show();
+          $('.new_twits').show();
+          $('.cancel').hide();
+          $('.commit').hide();
+          $('.panel-heading').text('Twittler feed (home)');
+          //erase all other twits and re-append all twits
+
+          $('.media-list').html(''); 
+          $twit_list = $('.media-list');
+
+          var $twit_list = $('.media-list');
+
+          var index = 0;
+          var curr_num_twits = streams.home.length;
+          var prev_num_twits = curr_num_twits;
+
+          while(index < curr_num_twits){ // goes through twits in order prepending to the ul
+            var twit = streams.home[index];
+            var $twit = buildTwit(twit);
+            $twit.prependTo($twit_list);
+            index += 1;
+          }
+
+        });
+
+
+        $('.write').on('click', function(event){
+          $('.write').hide();
+          $('.new_twits').hide();
+          $('.cancel').show();
+          $('.commit').show();
+          //$('<br />').prependTo('.panel-body');
+          $('<textarea class="form-control" placeholder="Enter here for tweet..." rows="3"></textarea>')
+            .prependTo('.panel-body');
+
+            // append to lists in data_generator, trigger the new_twits button
+        });
+
+        $('.cancel').on('click', function(event){
+          $('.cancel').hide();
+          $('.commit').hide();
+          $('.write').show();
+          $('.new_twits').show();
+          $('.form-control').remove();
+        });
+
+        $('.commit').on('click', function(event){
+          $('.cancel').hide();
+          $('.commit').hide();
+          $('.write').show();
+          $('.new_twits').show();
+
+          var message = $('.form-control').val();
+          $('.form-control').remove();
+          writeTweet(message);
+
+          $('.new_twits').trigger('click');
+        });
+
+
+        // populate twittler feed when first visit the page
+        $('.home').trigger('click');
 
       });
 
     </script>
+
+
   </body>
 </html>
